@@ -7,14 +7,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  pages: write
-  id-token: write
 
 jobs:
   deploy-pr:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
     concurrency:
       group: pages-deploy
       cancel-in-progress: false
@@ -98,15 +94,6 @@ jobs:
             fi
             git push origin gh-pages
           fi
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: gh-pages-repo/
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
       - name: Generate PR comment
         if: github.event.action != 'closed'
