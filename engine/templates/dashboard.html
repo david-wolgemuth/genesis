@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Genesis — {{run_name}}</title>
+<style>
+body { background: #0a0a1a; color: #c0c0c0; font-family: 'Courier New', monospace; margin: 2em; }
+h1 { color: #4a90d9; }
+h2 { color: #888; border-bottom: 1px solid #333; padding-bottom: 0.3em; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin: 1em 0; }
+.stat { background: #111; padding: 1em; border: 1px solid #222; }
+.stat .label { color: #666; font-size: 0.8em; text-transform: uppercase; }
+.stat .value { color: #4a90d9; font-size: 1.5em; margin-top: 0.3em; }
+.views { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin: 2em 0; }
+.view { background: #111; padding: 1em; border: 1px solid #222; overflow: auto; }
+.view h3 { color: #888; margin-top: 0; }
+.elements { list-style: none; padding: 0; }
+.elements li { padding: 0.3em 0; border-bottom: 1px solid #1a1a1a; }
+.bar { display: inline-block; height: 12px; margin-right: 8px; vertical-align: middle; }
+.events { max-height: 400px; overflow-y: auto; font-size: 0.85em; }
+.event { padding: 0.4em; border-bottom: 1px solid #1a1a1a; }
+.event .tick { color: #4a90d9; }
+</style>
+</head>
+<body>
+<h1>Genesis — {{run_name}}</h1>
+
+<div class="stats">
+<div class="stat"><div class="label">Total Agents</div><div class="value">{{total_agents}}</div></div>
+<div class="stat"><div class="label">Free</div><div class="value">{{free}}</div></div>
+<div class="stat"><div class="label">Bonded</div><div class="value">{{bonded}}</div></div>
+<div class="stat"><div class="label">Bonds Formed</div><div class="value">{{bonds_formed}}</div></div>
+<div class="stat"><div class="label">Bonds Broken</div><div class="value">{{bonds_broken}}</div></div>
+</div>
+
+<h2>Element Distribution</h2>
+<ul class="elements">
+{{elements}}
+</ul>
+
+<h2>Views</h2>
+<div class="views">
+<div class="view">
+<h3>Global Heat Map</h3>
+{{heatmap}}
+</div>
+<div class="view">
+<h3>Isometric Terrain</h3>
+{{isometric}}
+</div>
+</div>
+
+<h2>Event Log</h2>
+<div class="events">
+{{events}}
+</div>
+</body>
+</html>

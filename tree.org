@@ -1,0 +1,110 @@
+#+TITLE: Genesis Concept Tree
+#+STARTUP: overview
+
+* Prime
+Cycle 1: Scaffolding the engine. Grid, elements, bonding, diffusion,
+conservation, and a minimal renderer. First run on the tidal-pool seed.
+Research topic: chemical bonding thermodynamics and emergent complexity.
+
+* World                                                        :branch:
+** Grid and Terrain                                            :implemented:
+   2D grid with elevation/depth per cell. Temperature and pressure
+   derived from depth. Loaded from seed config.
+** Star Energy                                                 :implemented:
+   Cosine sweep for day/night cycle. UV attenuation underwater.
+   Energy input per cell varies with angle to star and depth.
+** Diffusion                                                   :implemented:
+   Free agents drift toward lower-concentration neighbors.
+   Fick's first law, discretized on the grid.
+** Clocks                                                      :implemented:
+   Three-tier tick hierarchy: stellar (1/cycle), world (~10/cycle),
+   agent (~1000/cycle). Inner loop skips cold cells.
+** Pressure and Depth                                          :shallow:
+   Pressure is linear with depth. Could add nonlinear effects,
+   compressibility, or pressure-driven currents later.
+** Geothermal Vents                                            :implemented:
+   Point sources of energy on the grid floor. Configurable count
+   and output. Placement from seed config.
+** Tidal Mechanics                                             :discovered:
+   Periodic water level changes driven by orbital mechanics.
+   Would create mixing zones and periodic exposure/submersion.
+** Erosion and Sedimentation                                   :discovered:
+   Slow terrain evolution. Requires long timescales and
+   material transport model.
+** Atmospheric Chemistry                                       :discovered:
+   Free elements in the atmosphere reacting. Greenhouse effects,
+   UV shielding. Requires gas-phase reaction model.
+
+* Agents                                                       :branch:
+** Entity-Component Model                                      :implemented:
+   Agents are bags of components. No type hierarchy. An element
+   is an agent. A composite is an agent. Same architecture.
+** Bonding                                                     :implemented:
+   Adjacent agents evaluate bond rules from elements.toml.
+   Exothermic bonds form spontaneously if shape-compatible.
+   Endothermic bonds require energy input from cell.
+   Bond stability depends on temperature and pressure.
+** Bond Breaking                                               :implemented:
+   Bonds break when local conditions exceed stability limits.
+   Components return to the cell as free agents.
+** Neighborhood Interaction                                    :implemented:
+   Agents interact only with adjacent cells. No action at distance.
+** Catalysis                                                   :shallow:
+   Catalyst presence multiplies bond formation rate. Currently
+   simple multiplier. Could model enzyme kinetics (Michaelis-Menten).
+** Reaction Kinetics (Arrhenius)                               :discovered:
+   Temperature-dependent reaction rates. The Arrhenius equation
+   governs how fast bonds form as a function of temperature.
+** Metabolism                                                   :discovered:
+   Agents that consume elements/energy and produce others.
+   Requires internal state and energy accounting.
+** Replication                                                  :discovered:
+   Template-based self-copying with imperfect fidelity.
+   Variation is mandatory. Requires internal structure model.
+** Membranes                                                    :discovered:
+   Boundary components that contain other agents. Selective
+   permeability. Requires osmotic pressure (Van't Hoff).
+** Motility                                                     :discovered:
+   Self-directed movement consuming energy. Requires
+   energy budget and directional decision-making.
+
+* Render                                                       :branch:
+** Snapshot System                                             :implemented:
+   Captures state at transitions: first bond, first composite,
+   first catalytic event. Fossil record model.
+** Event Log                                                   :implemented:
+   JSON log of simulation events. Timestamped, typed.
+** Basic Renderer                                              :implemented:
+   Isometric terrain view with activity heat map overlay.
+   HTML output with inline SVG.
+** Dashboard                                                   :implemented:
+   Global overview: population chart, element distribution,
+   bonding activity over time. Fixed views every run.
+** Curator                                                     :shallow:
+   Currently uses simple thresholds (first bond, first composite).
+   Could develop more sophisticated interest metrics.
+** Narrator                                                    :discovered:
+   Reads event log, writes prose narrative of the run.
+   Not implemented in v1.
+
+* Conservation                                                 :implemented:
+  Element counts verified after every world tick. Panic on violation.
+  The single most important invariant.
+
+* Science                                                      :branch:
+** Thermodynamics                                              :shallow:
+   Gibbs free energy for bond evaluation. Currently simplified
+   to energy_released/required thresholds. Could add entropy term.
+** Fick's Laws (Diffusion)                                     :implemented:
+   First law discretized on grid. Flux proportional to
+   concentration gradient. Diffusion coefficient from element mass.
+** Arrhenius Equation                                          :discovered:
+   k = A * exp(-Ea / (R * T)). Rate constant as function of
+   temperature. Would make bonding temperature-sensitive.
+** Van't Hoff Equation                                         :discovered:
+   Osmotic pressure. Relevant when membranes are implemented.
+** Wright-Fisher Model                                         :discovered:
+   Genetic drift in finite populations. Relevant when
+   replication with variation is implemented.
+** Michaelis-Menten Kinetics                                   :discovered:
+   Enzyme catalysis saturation. Would deepen the catalysis model.
