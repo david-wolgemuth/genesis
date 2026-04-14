@@ -1,0 +1,169 @@
+[
+  {
+    "type": "first_bond",
+    "tick": 100,
+    "x": 67,
+    "y": 2,
+    "elements": [
+      "alpha",
+      "gamma"
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1000,
+    "free_agents": 2622,
+    "bonded_agents": 1878,
+    "total_bonds": 942,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 1502,
+    "count": 1000
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2000,
+    "free_agents": 2288,
+    "bonded_agents": 2212,
+    "total_bonds": 1109,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3000,
+    "free_agents": 2136,
+    "bonded_agents": 2364,
+    "total_bonds": 1185,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4000,
+    "free_agents": 2058,
+    "bonded_agents": 2442,
+    "total_bonds": 1224,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 5000,
+    "free_agents": 1998,
+    "bonded_agents": 2502,
+    "total_bonds": 1254,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "simulation_end",
+    "tick": 5000,
+    "total_bonds_formed": 1255,
+    "total_bonds_broken": 0,
+    "conservation_ok": true
+  }
+]

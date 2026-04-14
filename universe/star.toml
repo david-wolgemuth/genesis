@@ -1,0 +1,15 @@
+# Genesis Star Configuration
+# The primary energy source for all chemistry.
+
+[star]
+energy_output = 1000.0
+distance = 1.0                 # AU equivalent — scales energy received
+
+[orbit]
+period = 1000                  # ticks per full day/night cycle
+axial_tilt = 0.1               # affects seasonal variation
+
+[energy_model]
+# Energy hitting a cell = (energy_output / distance^2) * cos(angle_to_star)
+# UV component scales with altitude — underwater cells get exponential dropoff
+uv_water_attenuation = 0.05    # per unit depth

@@ -1,0 +1,22 @@
+# Tidal Pool Seed
+# Shallow coastal zone with strong energy input and mixing.
+# The default seed — a concentrated environment for fast emergence.
+
+name = "Tidal Pool"
+description = "Shallow coastal zone with strong energy input and tidal mixing"
+
+[terrain]
+type = "gradient"
+left_depth = -200.0            # deeper ocean on left
+right_depth = 50.0             # land on right
+roughness = 0.3
+
+[initial_agents]
+alpha = 2000
+beta = 1500
+gamma = 500
+delta = 300
+epsilon = 200
+
+[placement]
+strategy = "density_by_depth"   # more stuff in shallows

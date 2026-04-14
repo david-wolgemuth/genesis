@@ -1,0 +1,19 @@
+# Genesis Environment Configuration
+# Defines the physical stage on which chemistry plays out.
+
+[grid]
+width = 80
+height = 40
+depth_range = [-500.0, 200.0]   # min elevation (deep trench) to max (highland)
+
+[atmosphere]
+uv_surface_intensity = 100.0
+
+[ocean]
+depth_temperature_gradient = 0.05   # degrees per unit depth below surface
+surface_temperature = 300.0         # kelvin at sea level
+
+[geothermal]
+vent_count = 3
+vent_energy_output = 50.0
+vent_placement = "random"
