@@ -26,8 +26,16 @@ pub fn update_star_energy(grid: &mut Grid, star: &StarConfig, tick: u64) {
         let uv_atten = (-star.energy_model.uv_water_attenuation * depth).exp();
         cell.uv_intensity = surface_energy * uv_atten;
 
-        // Energy budget: combination of star energy and any geothermal
+        // Energy budget starts from star energy; geothermal is added separately
         cell.energy_budget = cell.uv_intensity;
+    }
+}
+
+/// Reset energy budgets to zero before recomputing sources.
+pub fn reset_energy(grid: &mut Grid) {
+    for cell in &mut grid.cells {
+        cell.energy_budget = 0.0;
+        cell.uv_intensity = 0.0;
     }
 }
 

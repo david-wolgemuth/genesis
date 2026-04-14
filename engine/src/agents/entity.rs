@@ -9,6 +9,8 @@ pub struct Agent {
     pub y: usize,
     /// The element type name (references elements.toml). None for composites.
     pub element: Option<String>,
+    /// Element mass from config. Affects diffusion rate.
+    pub element_mass: f64,
     /// IDs of agents this entity is bonded to.
     pub bonds: HashSet<u64>,
     /// For composites: the list of sub-agent IDs.
@@ -16,12 +18,13 @@ pub struct Agent {
 }
 
 impl Agent {
-    pub fn new_element(id: u64, element: String, x: usize, y: usize) -> Self {
+    pub fn new_element(id: u64, element: String, mass: f64, x: usize, y: usize) -> Self {
         Self {
             id,
             x,
             y,
             element: Some(element),
+            element_mass: mass,
             bonds: HashSet::new(),
             components: Vec::new(),
         }
@@ -31,11 +34,9 @@ impl Agent {
         !self.components.is_empty()
     }
 
-    /// Mass: for a free element, comes from config lookup.
-    /// For composites, sum of component masses (handled externally).
+    /// Mass from the element config, used for diffusion and other mass-dependent logic.
     pub fn mass(&self) -> f64 {
-        // Default mass; overridden by config lookup in the simulation
-        1.0
+        self.element_mass
     }
 
     pub fn element_name(&self) -> Option<&str> {

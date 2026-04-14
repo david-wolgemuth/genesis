@@ -24,11 +24,11 @@ impl ClockSystem {
     }
 
     pub fn is_stellar_tick(&self) -> bool {
-        self.current_tick % self.stellar_period == 0
+        self.current_tick > 0 && self.current_tick % self.stellar_period == 0
     }
 
     pub fn is_world_tick(&self) -> bool {
-        self.current_tick % self.world_period == 0
+        self.current_tick > 0 && self.current_tick % self.world_period == 0
     }
 
     /// Agent ticks happen every tick (the innermost loop).

@@ -69,14 +69,14 @@ pub fn agent_tick(
         let cell = grid.cell(ax, ay);
         let cell_agent_ids: Vec<u64> = cell.agent_ids.iter().copied().collect();
         let cell_agents: Vec<&Agent> = cell_agent_ids.iter().filter_map(|id| agents.get(id)).collect();
-        let cat = bonding::catalysis_multiplier(&cell_agents, &a_name, &b_name, &config.catalysis_rules);
-        if cat > 1.0 && !stats.catalysis_seen {
+        let cat_result = bonding::catalysis_check(&cell_agents, &a_name, &b_name, &config.catalysis_rules);
+        if cat_result.multiplier > 1.0 && !stats.catalysis_seen {
             stats.catalysis_seen = true;
             events.push(Event::FirstCatalysis {
                 tick,
                 x: ax,
                 y: ay,
-                catalyst: "gamma".to_string(),
+                catalyst: cat_result.catalyst.unwrap_or_else(|| "unknown".to_string()),
                 reaction: vec![a_name.clone(), b_name.clone()],
             });
         }
@@ -127,6 +127,8 @@ pub struct TickStats {
     pub total_bonds_ever: u64,
     pub catalysis_seen: bool,
     pub max_composite_size: usize,
+    /// Milestone thresholds that have already been emitted.
+    pub milestones_emitted: Vec<u64>,
 }
 
 impl TickStats {
@@ -137,6 +139,17 @@ impl TickStats {
             total_bonds_ever: 0,
             catalysis_seen: false,
             max_composite_size: 0,
+            milestones_emitted: Vec::new(),
+        }
+    }
+
+    /// Check if a milestone threshold has been crossed and not yet emitted.
+    pub fn check_milestone(&mut self, threshold: u64) -> bool {
+        if self.total_bonds_ever >= threshold && !self.milestones_emitted.contains(&threshold) {
+            self.milestones_emitted.push(threshold);
+            true
+        } else {
+            false
         }
     }
 }

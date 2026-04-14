@@ -12,7 +12,7 @@ use crate::render::renderer::{render_dashboard, render_highlight};
 use crate::render::snapshot::{Event, EventLog};
 use crate::world::clocks::ClockSystem;
 use crate::world::diffusion::diffuse_agents;
-use crate::world::energy::{apply_geothermal, update_star_energy};
+use crate::world::energy::{apply_geothermal, reset_energy, update_star_energy};
 use crate::world::grid::Grid;
 use crate::world::terrain::{init_terrain, pressure_from_depth, temperature_from_depth};
 
@@ -92,9 +92,16 @@ fn main() {
 
     let agent_counts = seed_config.initial_agents.as_map();
     for (elem_name, &count) in &agent_counts {
+        // Look up element mass from config
+        let mass = elements_config
+            .elements
+            .iter()
+            .find(|e| e.name == *elem_name)
+            .map(|e| e.mass)
+            .unwrap_or(1.0);
         for _ in 0..count {
             let (x, y) = place_agent(&grid, &seed_config, &mut rng);
-            let agent = Agent::new_element(next_id, elem_name.clone(), x, y);
+            let agent = Agent::new_element(next_id, elem_name.clone(), mass, x, y);
             grid.cell_mut(x, y).agent_ids.insert(next_id);
             agents.insert(next_id, agent);
             next_id += 1;
@@ -123,7 +130,7 @@ fn main() {
     let mut stats = TickStats::new();
 
     let total_ticks = cli.cycles * 100; // 100 agent ticks per cycle
-    let snapshot_interval = total_ticks / 5; // ~5 snapshots per run
+    let snapshot_interval = (total_ticks / 5).max(1); // ~5 snapshots per run, min 1
 
     println!("Running {} cycles ({} ticks)...", cli.cycles, total_ticks);
 
@@ -131,14 +138,9 @@ fn main() {
     for _ in 0..total_ticks {
         clocks.tick();
 
-        // Stellar tick: update star energy
-        if clocks.is_stellar_tick() {
-            update_star_energy(&mut grid, &star_config, clocks.current_tick);
-        }
-
-        // World tick: diffusion, temperature, pressure, geothermal
+        // World tick: recompute energy, diffusion, temperature, pressure
         if clocks.is_world_tick() {
-            // Reset temperatures to baseline
+            // Reset temperatures and energy to baseline
             for cell in &mut grid.cells {
                 let depth = cell.depth();
                 cell.temperature = temperature_from_depth(
@@ -148,16 +150,15 @@ fn main() {
                 );
                 cell.pressure = pressure_from_depth(depth);
             }
+            reset_energy(&mut grid);
 
-            // Apply geothermal energy
+            // Recompute energy: star first, then geothermal adds on top
+            update_star_energy(&mut grid, &star_config, clocks.current_tick);
             apply_geothermal(
                 &mut grid,
                 &vent_positions,
                 env_config.geothermal.vent_energy_output,
             );
-
-            // Update star energy
-            update_star_energy(&mut grid, &star_config, clocks.current_tick);
 
             // Diffuse free agents
             diffuse_agents(&mut grid, &mut agents, &mut rng);
@@ -210,10 +211,10 @@ fn main() {
             event_log.record(event);
         }
 
-        // Check for bond milestones
+        // Check for bond milestones (handles jumps past threshold)
         let milestone_thresholds = [10, 50, 100, 500, 1000];
         for &threshold in &milestone_thresholds {
-            if stats.total_bonds_ever == threshold {
+            if stats.check_milestone(threshold) {
                 event_log.record(Event::BondCountMilestone {
                     tick: clocks.current_tick,
                     count: threshold,
@@ -261,7 +262,6 @@ fn main() {
             Event::FirstBond { tick, x, y, elements } => {
                 let html = render_highlight(
                     &grid,
-                    &agents,
                     "First Bond",
                     &format!(
                         "The first chemical bond in this universe: {} and {} joined at ({}, {}). \
@@ -279,7 +279,6 @@ fn main() {
             Event::FirstCatalysis { tick, catalyst, reaction, .. } => {
                 let html = render_highlight(
                     &grid,
-                    &agents,
                     "First Catalysis",
                     &format!(
                         "The first catalytic event: {} accelerated the bonding of {} and {}. \

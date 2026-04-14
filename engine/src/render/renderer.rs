@@ -4,8 +4,17 @@ use crate::render::snapshot::EventLog;
 use crate::world::grid::Grid;
 use std::collections::HashMap;
 
+/// Escape special HTML characters in dynamic text to prevent injection.
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
 /// Generate an isometric terrain view with activity heat map as an SVG string.
-pub fn render_isometric(grid: &Grid, agents: &HashMap<u64, Agent>) -> String {
+pub fn render_isometric(grid: &Grid) -> String {
     let cell_w = 8.0_f64;
     let cell_h = 4.0_f64;
     let offset_x = (grid.height as f64) * cell_w / 2.0 + 20.0;
@@ -85,7 +94,7 @@ fn activity_color(agent_count: usize, energy: f64) -> &'static str {
 }
 
 /// Generate the global overview heat map (flat top-down, not isometric).
-pub fn render_heatmap(grid: &Grid, agents: &HashMap<u64, Agent>) -> String {
+pub fn render_heatmap(grid: &Grid) -> String {
     let scale = 6;
     let w = grid.width * scale;
     let h = grid.height * scale;
@@ -115,7 +124,36 @@ pub fn render_heatmap(grid: &Grid, agents: &HashMap<u64, Agent>) -> String {
     svg
 }
 
+/// Load a template file from the templates/ directory (compile-time embed).
+const DASHBOARD_TEMPLATE: &str = include_str!("../../templates/dashboard.html");
+const HIGHLIGHT_TEMPLATE: &str = include_str!("../../templates/highlight.html");
+
+/// Format an event as an HTML snippet for the event log.
+fn format_event(event: &crate::render::snapshot::Event) -> String {
+    match event {
+        crate::render::snapshot::Event::FirstBond { tick, elements, .. } => {
+            format!("<span class=\"tick\">t={}</span> First bond: {} + {}", tick, html_escape(&elements[0]), html_escape(&elements[1]))
+        }
+        crate::render::snapshot::Event::FirstComposite3Plus { tick, size, elements, .. } => {
+            format!("<span class=\"tick\">t={}</span> First {}-element composite: {:?}", tick, size, elements)
+        }
+        crate::render::snapshot::Event::FirstCatalysis { tick, catalyst, reaction, .. } => {
+            format!("<span class=\"tick\">t={}</span> First catalysis: {} catalyzed {} + {}", tick, html_escape(catalyst), html_escape(&reaction[0]), html_escape(&reaction[1]))
+        }
+        crate::render::snapshot::Event::BondCountMilestone { tick, count } => {
+            format!("<span class=\"tick\">t={}</span> Bond milestone: {} total bonds", tick, count)
+        }
+        crate::render::snapshot::Event::PopulationSnapshot { tick, free_agents, bonded_agents, total_bonds, .. } => {
+            format!("<span class=\"tick\">t={}</span> Population: {} free, {} bonded, {} bonds", tick, free_agents, bonded_agents, total_bonds)
+        }
+        crate::render::snapshot::Event::SimulationEnd { tick, total_bonds_formed, total_bonds_broken, conservation_ok } => {
+            format!("<span class=\"tick\">t={}</span> End: {} formed, {} broken, conservation: {}", tick, total_bonds_formed, total_bonds_broken, if *conservation_ok { "OK" } else { "FAILED" })
+        }
+    }
+}
+
 /// Generate dashboard HTML with population charts and overview.
+/// Uses the dashboard.html template from engine/templates/.
 pub fn render_dashboard(
     grid: &Grid,
     agents: &HashMap<u64, Agent>,
@@ -137,149 +175,52 @@ pub fn render_dashboard(
     let mut elem_list: Vec<_> = elem_counts.into_iter().collect();
     elem_list.sort_by(|a, b| b.1.cmp(&a.1));
 
-    let heatmap = render_heatmap(grid, agents);
-    let isometric = render_isometric(grid, agents);
-
-    let mut html = format!(
-        r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Genesis — {run_name}</title>
-<style>
-body {{ background: #0a0a1a; color: #c0c0c0; font-family: 'Courier New', monospace; margin: 2em; }}
-h1 {{ color: #4a90d9; }}
-h2 {{ color: #888; border-bottom: 1px solid #333; padding-bottom: 0.3em; }}
-.stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin: 1em 0; }}
-.stat {{ background: #111; padding: 1em; border: 1px solid #222; }}
-.stat .label {{ color: #666; font-size: 0.8em; text-transform: uppercase; }}
-.stat .value {{ color: #4a90d9; font-size: 1.5em; margin-top: 0.3em; }}
-.views {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin: 2em 0; }}
-.view {{ background: #111; padding: 1em; border: 1px solid #222; overflow: auto; }}
-.view h3 {{ color: #888; margin-top: 0; }}
-.elements {{ list-style: none; padding: 0; }}
-.elements li {{ padding: 0.3em 0; border-bottom: 1px solid #1a1a1a; }}
-.bar {{ display: inline-block; height: 12px; margin-right: 8px; vertical-align: middle; }}
-.events {{ max-height: 400px; overflow-y: auto; font-size: 0.85em; }}
-.event {{ padding: 0.4em; border-bottom: 1px solid #1a1a1a; }}
-.event .tick {{ color: #4a90d9; }}
-</style>
-</head>
-<body>
-<h1>Genesis — {run_name}</h1>
-
-<div class="stats">
-<div class="stat"><div class="label">Total Agents</div><div class="value">{total_agents}</div></div>
-<div class="stat"><div class="label">Free</div><div class="value">{free}</div></div>
-<div class="stat"><div class="label">Bonded</div><div class="value">{bonded}</div></div>
-<div class="stat"><div class="label">Bonds Formed</div><div class="value">{}</div></div>
-<div class="stat"><div class="label">Bonds Broken</div><div class="value">{}</div></div>
-</div>
-
-<h2>Element Distribution</h2>
-<ul class="elements">
-"#,
-        stats.bonds_formed,
-        stats.bonds_broken
-    );
-
+    // Build element list HTML
     let max_count = elem_list.iter().map(|(_, c)| *c).max().unwrap_or(1);
     let colors = ["#4a90d9", "#d94a4a", "#4ad94a", "#d9d94a", "#9a4ad9"];
+    let mut elements_html = String::new();
     for (i, (name, count)) in elem_list.iter().enumerate() {
         let bar_width = (*count as f64 / max_count as f64 * 200.0) as usize;
         let color = colors[i % colors.len()];
-        html.push_str(&format!(
+        elements_html.push_str(&format!(
             r#"<li><span class="bar" style="width: {}px; background: {};"></span>{}: {}</li>"#,
-            bar_width, color, name, count
+            bar_width, color, html_escape(name), count
         ));
     }
 
-    html.push_str(r#"</ul>
-
-<h2>Views</h2>
-<div class="views">
-<div class="view">
-<h3>Global Heat Map</h3>
-"#);
-    html.push_str(&heatmap);
-    html.push_str(r#"
-</div>
-<div class="view">
-<h3>Isometric Terrain</h3>
-"#);
-    html.push_str(&isometric);
-    html.push_str(r#"
-</div>
-</div>
-
-<h2>Event Log</h2>
-<div class="events">
-"#);
-
+    // Build events HTML
+    let mut events_html = String::new();
     for event in &event_log.events {
-        let desc = match event {
-            crate::render::snapshot::Event::FirstBond { tick, elements, .. } => {
-                format!("<span class=\"tick\">t={}</span> First bond: {} + {}", tick, elements[0], elements[1])
-            }
-            crate::render::snapshot::Event::FirstComposite3Plus { tick, size, elements, .. } => {
-                format!("<span class=\"tick\">t={}</span> First {}-element composite: {:?}", tick, size, elements)
-            }
-            crate::render::snapshot::Event::FirstCatalysis { tick, catalyst, reaction, .. } => {
-                format!("<span class=\"tick\">t={}</span> First catalysis: {} catalyzed {} + {}", tick, catalyst, reaction[0], reaction[1])
-            }
-            crate::render::snapshot::Event::BondCountMilestone { tick, count } => {
-                format!("<span class=\"tick\">t={}</span> Bond milestone: {} total bonds", tick, count)
-            }
-            crate::render::snapshot::Event::PopulationSnapshot { tick, free_agents, bonded_agents, total_bonds, .. } => {
-                format!("<span class=\"tick\">t={}</span> Population: {} free, {} bonded, {} bonds", tick, free_agents, bonded_agents, total_bonds)
-            }
-            crate::render::snapshot::Event::SimulationEnd { tick, total_bonds_formed, total_bonds_broken, conservation_ok } => {
-                format!("<span class=\"tick\">t={}</span> End: {} formed, {} broken, conservation: {}", tick, total_bonds_formed, total_bonds_broken, if *conservation_ok { "OK" } else { "FAILED" })
-            }
-        };
-        html.push_str(&format!(r#"<div class="event">{}</div>"#, desc));
+        events_html.push_str(&format!(
+            "<div class=\"event\">{}</div>\n",
+            format_event(event)
+        ));
     }
 
-    html.push_str(r#"
-</div>
-</body>
-</html>"#);
-
-    html
+    DASHBOARD_TEMPLATE
+        .replace("{{run_name}}", &html_escape(run_name))
+        .replace("{{total_agents}}", &total_agents.to_string())
+        .replace("{{free}}", &free.to_string())
+        .replace("{{bonded}}", &bonded.to_string())
+        .replace("{{bonds_formed}}", &stats.bonds_formed.to_string())
+        .replace("{{bonds_broken}}", &stats.bonds_broken.to_string())
+        .replace("{{elements}}", &elements_html)
+        .replace("{{heatmap}}", &render_heatmap(grid))
+        .replace("{{isometric}}", &render_isometric(grid))
+        .replace("{{events}}", &events_html)
 }
 
 /// Generate a highlight page for a specific event.
+/// Uses the highlight.html template from engine/templates/.
 pub fn render_highlight(
     grid: &Grid,
-    agents: &HashMap<u64, Agent>,
     title: &str,
     description: &str,
     event_tick: u64,
 ) -> String {
-    let isometric = render_isometric(grid, agents);
-
-    format!(
-        r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Genesis — {title}</title>
-<style>
-body {{ background: #0a0a1a; color: #c0c0c0; font-family: 'Courier New', monospace; margin: 2em; }}
-h1 {{ color: #4a90d9; }}
-.meta {{ color: #666; margin-bottom: 2em; }}
-.description {{ font-size: 1.1em; line-height: 1.6; margin: 1em 0; }}
-.view {{ background: #111; padding: 1em; border: 1px solid #222; margin: 2em 0; display: inline-block; }}
-</style>
-</head>
-<body>
-<h1>{title}</h1>
-<div class="meta">Tick {event_tick}</div>
-<div class="description">{description}</div>
-<div class="view">
-{isometric}
-</div>
-</body>
-</html>"#
-    )
+    HIGHLIGHT_TEMPLATE
+        .replace("{{title}}", &html_escape(title))
+        .replace("{{event_tick}}", &event_tick.to_string())
+        .replace("{{description}}", &html_escape(description))
+        .replace("{{isometric}}", &render_isometric(grid))
 }

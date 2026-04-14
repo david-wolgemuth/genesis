@@ -22,13 +22,15 @@ pub enum Activity {
 }
 
 impl Cell {
+    /// Create a new cell. Temperature and pressure are initialized to defaults
+    /// and recomputed from terrain during simulation setup.
     pub fn new(x: usize, y: usize, elevation: f64) -> Self {
         Self {
             x,
             y,
             elevation,
-            temperature: 300.0,
-            pressure: 1.0,
+            temperature: 0.0,  // recomputed from depth + config during init
+            pressure: 0.0,     // recomputed from depth during init
             uv_intensity: 0.0,
             energy_budget: 0.0,
             agent_ids: HashSet::new(),
@@ -103,11 +105,18 @@ impl Grid {
     }
 
     /// Tag cells by activity level for compute optimization.
+    /// Hot cells get full agent tick resolution. Warm cells tick at reduced
+    /// frequency. Cold cells are skipped entirely.
+    const HOT_AGENT_THRESHOLD: usize = 3;
+    const HOT_ENERGY_THRESHOLD: f64 = 10.0;
+
     pub fn update_activity(&mut self) {
         for cell in &mut self.cells {
             if cell.agent_ids.is_empty() {
                 cell.activity = Activity::Cold;
-            } else if cell.agent_ids.len() >= 3 || cell.energy_budget > 10.0 {
+            } else if cell.agent_ids.len() >= Self::HOT_AGENT_THRESHOLD
+                || cell.energy_budget > Self::HOT_ENERGY_THRESHOLD
+            {
                 cell.activity = Activity::Hot;
             } else {
                 cell.activity = Activity::Warm;

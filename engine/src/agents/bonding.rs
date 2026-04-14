@@ -78,14 +78,23 @@ pub fn find_bond_rule<'a>(
     })
 }
 
+/// Result of checking for catalysis in a cell.
+pub struct CatalysisResult {
+    pub multiplier: f64,
+    /// Name of the catalyst that triggered the boost, if any.
+    pub catalyst: Option<String>,
+}
+
 /// Check if a catalyst is present in the cell for a given reaction.
-pub fn catalysis_multiplier(
+/// Returns the combined multiplier and the name of the first matching catalyst.
+pub fn catalysis_check(
     cell_agents: &[&Agent],
     a_name: &str,
     b_name: &str,
     catalysis_rules: &[CatalysisRule],
-) -> f64 {
+) -> CatalysisResult {
     let mut multiplier = 1.0;
+    let mut catalyst_name = None;
     for rule in catalysis_rules {
         let reaction_matches = (rule.reaction[0] == a_name && rule.reaction[1] == b_name)
             || (rule.reaction[0] == b_name && rule.reaction[1] == a_name);
@@ -98,9 +107,12 @@ pub fn catalysis_multiplier(
         });
         if catalyst_present {
             multiplier *= rule.rate_multiplier;
+            if catalyst_name.is_none() {
+                catalyst_name = Some(rule.catalyst.clone());
+            }
         }
     }
-    multiplier
+    CatalysisResult { multiplier, catalyst: catalyst_name }
 }
 
 /// Check whether an existing bond should break under current conditions.
@@ -172,8 +184,8 @@ pub fn attempt_bonds(
             if let Some(rule) = find_bond_rule(a_name, b_name, bond_rules) {
                 if can_bond(a, b, rule, cell.temperature, cell.pressure, cell.energy_budget, elements) {
                     // Apply catalysis multiplier to bond probability
-                    let cat_mult = catalysis_multiplier(&cell_agents, a_name, b_name, catalysis_rules);
-                    let bond_prob = (0.1 * cat_mult).min(1.0);
+                    let cat_result = catalysis_check(&cell_agents, a_name, b_name, catalysis_rules);
+                    let bond_prob = (0.1 * cat_result.multiplier).min(1.0);
 
                     if rng.gen::<f64>() < bond_prob {
                         new_bonds.push((a.id, b.id));
