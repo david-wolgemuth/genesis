@@ -1,0 +1,167 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-pr:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          path: pr-repo
+          fetch-depth: 0  # Full history needed for git diff against base
+
+      - name: Checkout gh-pages branch
+        id: checkout-gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-repo
+        continue-on-error: true
+
+      # First-run: create an orphan gh-pages branch if it doesn't exist yet.
+      # After this step, gh-pages-repo/ is ready regardless of which path ran.
+      - name: Initialize gh-pages branch if missing
+        if: steps.checkout-gh-pages.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git clone "${REPO_URL}" gh-pages-tmp
+          cd gh-pages-tmp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          git rm -rf .
+          mkdir -p pr-preview
+          echo '# Genesis Archive' > index.html
+          git add .
+          git commit -m "Initialize gh-pages"
+          git push "${REPO_URL}" HEAD:gh-pages
+          cd ..
+          rm -rf gh-pages-tmp
+          git clone --branch gh-pages --single-branch "${REPO_URL}" gh-pages-repo
+
+      - name: Update PR preview folder
+        if: github.event.action != 'closed'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_PATH="gh-pages-repo/pr-preview/pr-${PR_NUMBER}"
+
+          rm -rf "${PR_PATH}"
+          mkdir -p "${PR_PATH}"
+
+          # The static site lives entirely in archive/ — copy its contents so
+          # that relative links (e.g. runs/run-0001/dashboard.html) resolve
+          # correctly from the preview root.
+          if [ -d "pr-repo/archive" ]; then
+            cp -r pr-repo/archive/. "${PR_PATH}/"
+          fi
+
+      - name: Remove PR preview folder
+        if: github.event.action == 'closed'
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          rm -rf "gh-pages-repo/pr-preview/pr-${PR_NUMBER}"
+
+      - name: Commit and push to gh-pages
+        run: |
+          cd gh-pages-repo
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            if [ "${{ github.event.action }}" = "closed" ]; then
+              git commit -m "Remove preview for PR #${PR_NUMBER} 🛬"
+            else
+              git commit -m "Deploy preview for PR #${PR_NUMBER} 🛫"
+            fi
+            git push origin gh-pages
+          fi
+
+      - name: Generate PR comment
+        if: github.event.action != 'closed'
+        id: comment
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          REPO=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          PREVIEW_BASE="https://${OWNER}.github.io/${REPO}/pr-preview/pr-${PR_NUMBER}"
+
+          cd pr-repo
+
+          # Detect run directories that are new in this PR vs the base commit.
+          # fetch-depth: 0 above ensures the base SHA is available.
+          NEW_RUNS=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" 2>/dev/null \
+            | grep '^archive/runs/run-[0-9]' \
+            | sed 's|archive/runs/\(run-[0-9]*\)/.*|\1|' \
+            | sort -u)
+
+          {
+            echo "## Genesis Preview — PR #${PR_NUMBER}"
+            echo ""
+            echo "**[Archive Index](${PREVIEW_BASE}/)**"
+            echo ""
+
+            if [ -n "${NEW_RUNS}" ]; then
+              echo "### New Runs in This PR"
+              echo ""
+              for RUN in ${NEW_RUNS}; do
+                echo "#### ${RUN}"
+                [ -f "archive/runs/${RUN}/dashboard.html" ] && \
+                  echo "- [Dashboard](${PREVIEW_BASE}/runs/${RUN}/dashboard.html)"
+                [ -f "archive/runs/${RUN}/narrator.md" ] && \
+                  echo "- [Narrative](${PREVIEW_BASE}/runs/${RUN}/narrator.md)"
+                [ -f "archive/runs/${RUN}/research.md" ] && \
+                  echo "- [Research](${PREVIEW_BASE}/runs/${RUN}/research.md)"
+                for HIGHLIGHT in archive/runs/${RUN}/highlights/*.html; do
+                  if [ -f "${HIGHLIGHT}" ]; then
+                    LABEL=$(basename "${HIGHLIGHT}" .html | tr '-' ' ')
+                    echo "- [Highlight: ${LABEL}](${PREVIEW_BASE}/runs/${RUN}/highlights/$(basename "${HIGHLIGHT}"))"
+                  fi
+                done
+                echo ""
+              done
+            fi
+
+            echo "_Updated: $(date -u '+%Y-%m-%d %H:%M UTC') · Commit: \`${HEAD_SHA:0:7}\`_"
+          } > /tmp/pr-comment.md
+
+          echo "comment<<EOF" >> "${GITHUB_OUTPUT}"
+          cat /tmp/pr-comment.md >> "${GITHUB_OUTPUT}"
+          echo "EOF" >> "${GITHUB_OUTPUT}"
+
+      - name: Comment PR with preview URL
+        if: github.event.action != 'closed'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: ${{ steps.comment.outputs.comment }}
+
+      - name: Comment PR on removal
+        if: github.event.action == 'closed'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            🛬 **Preview removed**
+
+            PR #${{ github.event.pull_request.number }} has been closed and the preview has been removed.
