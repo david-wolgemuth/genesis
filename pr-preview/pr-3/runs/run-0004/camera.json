@@ -1,0 +1,74 @@
+{
+  "keyframes": [
+    {
+      "frame": 0,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Opening — full terrain overview"
+    },
+    {
+      "frame": 0,
+      "camera": [
+        36.0,
+        20.0,
+        16.0
+      ],
+      "target": [
+        26.0,
+        0.0,
+        1.0
+      ],
+      "note": "First bond at (26, 1) — gamma + delta join for the first time"
+    },
+    {
+      "frame": 0,
+      "camera": [
+        73.0,
+        25.0,
+        15.0
+      ],
+      "target": [
+        61.0,
+        0.0,
+        3.0
+      ],
+      "note": "First catalysis at (61, 3) — epsilon accelerates delta + gamma bonding"
+    },
+    {
+      "frame": 0,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Bond milestone: 50 total bonds — chemistry is spreading"
+    },
+    {
+      "frame": 10,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Final state — full terrain overview"
+    }
+  ]
+}

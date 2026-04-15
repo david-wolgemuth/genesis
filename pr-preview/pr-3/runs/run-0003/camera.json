@@ -1,0 +1,60 @@
+{
+  "keyframes": [
+    {
+      "frame": 0,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Opening — full terrain overview"
+    },
+    {
+      "frame": 0,
+      "camera": [
+        61.0,
+        20.0,
+        15.0
+      ],
+      "target": [
+        51.0,
+        0.0,
+        0.0
+      ],
+      "note": "First bond at (51, 0) — gamma + alpha join for the first time"
+    },
+    {
+      "frame": 0,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Bond milestone: 50 total bonds — chemistry is spreading"
+    },
+    {
+      "frame": 10,
+      "camera": [
+        40.0,
+        60.0,
+        60.0
+      ],
+      "target": [
+        40.0,
+        0.0,
+        20.0
+      ],
+      "note": "Final state — full terrain overview"
+    }
+  ]
+}

@@ -1,0 +1,200 @@
+[
+  {
+    "type": "first_bond",
+    "tick": 100,
+    "x": 22,
+    "y": 1,
+    "elements": [
+      "beta",
+      "epsilon"
+    ]
+  },
+  {
+    "type": "first_catalysis",
+    "tick": 100,
+    "x": 29,
+    "y": 35,
+    "catalyst": "epsilon",
+    "reaction": [
+      "delta",
+      "gamma"
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 100,
+    "count": 10
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 101,
+    "count": 50
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 103,
+    "count": 100
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 503,
+    "count": 500
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1000,
+    "free_agents": 2788,
+    "bonded_agents": 1712,
+    "total_bonds": 860,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 1701,
+    "count": 1000
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2000,
+    "free_agents": 2390,
+    "bonded_agents": 2110,
+    "total_bonds": 1059,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3000,
+    "free_agents": 2202,
+    "bonded_agents": 2298,
+    "total_bonds": 1153,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4000,
+    "free_agents": 2088,
+    "bonded_agents": 2412,
+    "total_bonds": 1210,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 5000,
+    "free_agents": 2030,
+    "bonded_agents": 2470,
+    "total_bonds": 1239,
+    "element_counts": [
+      [
+        "alpha",
+        2000
+      ],
+      [
+        "beta",
+        1500
+      ],
+      [
+        "delta",
+        300
+      ],
+      [
+        "epsilon",
+        200
+      ],
+      [
+        "gamma",
+        500
+      ]
+    ]
+  },
+  {
+    "type": "simulation_end",
+    "tick": 5000,
+    "total_bonds_formed": 1240,
+    "total_bonds_broken": 0,
+    "conservation_ok": true
+  }
+]
