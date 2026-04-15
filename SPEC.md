@@ -36,23 +36,30 @@ genesis/
         bonding.rs              # rule engine, reads elements.toml
         neighborhood.rs         # local-only interaction
         tick.rs                 # agent update loop
-      render/                   # observation layer — NEVER modifies state
-        snapshot.rs             # captures transitions, not every tick
-        curator.rs              # decides what's interesting
-        renderer.rs             # isometric visual output
+      serialize/                # observation layer — NEVER modifies state
+        snapshot.rs             # captures frames and transitions
+        curator.rs              # decides what's interesting, writes camera script
         narrator.rs             # reads event log, writes a story
       conservation.rs           # the jar — nothing created or destroyed
       main.rs
     Cargo.toml
 
+  viewer/                       # the visualization — written once, used by all runs
+    viewer.html                 # Three.js viewer, loads frame data, animates
+    README.md                   # how the viewer works
+
   archive/                      # browsable output
     index.html                  # auto-generated, links everything
     runs/
       run-NNNN/
-        dashboard.html          # fixed views every run
-        events.json             # transition log
-        highlights/             # curator-selected moments
+        frames/                 # snapshot data per tick interval
+          frame-0000.json       # grid state at tick 0
+          frame-0100.json       # grid state at tick 100
+          ...
+        events.json             # transition log (firsts, milestones)
+        camera.json             # curator's camera script (keyframes, zoom targets)
         narrator.md             # the story of this run
+        research.md             # what was learned this cycle
 
   notebook/                     # one entry per session
     YYYY-MM-DD.md
@@ -122,16 +129,15 @@ Each agent tick:
 5. If replicating, attempt copy (imperfect — variation is guaranteed)
 6. Check stability — does this agent still hold together at current temperature/pressure
 
-### render/ — The Glass
+### serialize/ — The Glass
 
-Render observes simulation state and produces output. It never modifies state. It has no feedback path into the simulation. It could be removed entirely and the simulation would run identically.
+Serialize observes simulation state and produces data. It never modifies state. It has no feedback path into the simulation. It could be removed entirely and the simulation would run identically. **It produces data, not visuals.** All rendering happens in the viewer.
 
-Four sub-concerns:
+Three sub-concerns:
 
-- **Snapshot** — captures state at transitions, not every tick. The fossil record model: when something new appears, when something goes extinct, when a threshold is crossed. Boring stretches are skipped.
-- **Curator** — examines what happened since last snapshot and decides what's interesting. Looks for: new agent types, spatial patterns, population shifts, chemistry firsts, boundary events. Selects the 2-3 most notable moments per run for highlight rendering.
-- **Renderer** — produces isometric visual output. Does NOT render individual agents as labeled objects. Renders *activity and density*. Heat maps of bonding frequency. Clusters glowing by complexity. Flows of elements. Trails of movement. The visualization should look like watching bees in a hive — you see swarm behavior and patterns, not individual labeled dots.
-- **Narrator** — reads the event log and writes a short narrative of what happened this run. "Bonding activity spiked near the volcanic ridge. A stable three-element composite appeared for the first time, then spread to neighboring cells. The deep trench remained inert."
+- **Snapshot** — captures grid state at regular intervals and at transitions. Each snapshot becomes a frame file: every cell's elevation, temperature, pressure, energy, agent count, bond count, complexity level, dominant element. Frames are written to `frames/frame-NNNN.json`. The interval is configurable — frequent enough to animate smoothly, sparse enough to keep file sizes reasonable. Additionally, snapshots capture transition events (firsts, milestones, extinctions) into `events.json`.
+- **Curator** — examines what happened across the run and produces a **camera script** (`camera.json`). The camera script is a list of keyframes: at frame N, point the camera here, zoom to this level, focus on this region. The curator looks for: new agent types, spatial patterns, population shifts, chemistry firsts, boundary events. It selects the 2-3 most notable moments and encodes them as camera keyframes so the viewer can offer a guided tour of the interesting parts. The viewer plays the camera script by default but allows the human to orbit freely at any point.
+- **Narrator** — reads the event log and writes a short narrative of what happened this run in `narrator.md`. "Bonding activity spiked near the volcanic ridge. A stable three-element composite appeared for the first time, then spread to neighboring cells. The deep trench remained inert."
 
 ---
 
@@ -304,21 +310,111 @@ This is critical for performance. A 200x100 grid is 20,000 cells. Most will be e
 
 ---
 
-## The Isometric Renderer
+## The Viewer
 
-The visual output is an isometric view of the terrain slab. The renderer should NOT draw individual agents as distinct objects (at chemistry scale, that's meaningless noise). Instead, it renders *aggregate properties per cell*:
+The simulation produces data. The viewer renders it. These are completely separate concerns.
 
-- **Activity intensity** — how many bonding events this tick. High activity = bright/warm colors.
-- **Complexity density** — average composite size in this cell. Simple free elements = dim. Large composites = bright.
-- **Flow lines** — direction and magnitude of net agent movement between cells.
-- **Population heat map** — where agents are concentrated.
-- **Composition coloring** — dominant element type in the cell, blended.
+### viewer.html
 
-The terrain itself renders as the isometric slab — ocean depth is visible as lower elevation, land rises up. The visualization overlays activity data onto the terrain.
+A single HTML file using Three.js that loads frame data from a run directory and animates it. This file is written once and works for every run. The agent almost never touches it. It lives in `viewer/` and is deployed to GitHub Pages alongside the archive.
 
-As the simulation progresses into biological eras (organisms with motility, distinct morphology), the renderer can begin showing individual high-complexity agents as distinct sprites — but only when they're complex and few enough to be individually meaningful. This transition should happen naturally based on agent complexity threshold, not a hardcoded era switch.
+Three.js handles: camera positioning, orbit controls (zoom, pan, rotate), lighting, and rendering. The custom JS is minimal — load frames, update geometry each tick, follow the camera script.
 
-The curator selects which region to render in detail. The dashboard always includes a global overview (flat top-down heat map of the full grid) plus the curator's chosen isometric detail view of the most interesting region.
+### What the viewer shows
+
+The terrain is rendered as a 3D heightmap. Each grid cell is a block whose **height is its elevation**. Deep ocean trenches are geometrically low. Coastal shelves are middle. Land rises up. You literally see the terrain shape. No guessing what depth a cell is — the geometry tells you.
+
+On top of the terrain, the viewer overlays activity data per cell:
+
+- **Color** — blended from dominant element types present in the cell. Uses element colors from `elements.toml`.
+- **Brightness/glow** — bonding activity intensity. High activity = bright. Inert cells = dim.
+- **Complexity** — average composite size. Can be rendered as block height offset above the terrain, particle density, or color saturation. Cells with large composites look different from cells with only free elements.
+
+The viewer does NOT render individual agents as distinct objects at chemistry scale. It renders aggregate cell state. As the simulation matures and complex agents become few and individually meaningful (organisms with motility), the viewer can begin showing them as distinct objects — but this transition is driven by the data (agent complexity and count), not a hardcoded mode switch.
+
+### Animation
+
+The viewer loads all frame files from a run and plays them in sequence. Controls:
+
+- **Play/pause** — animate forward through frames
+- **Scrub** — drag to any frame
+- **Speed** — adjustable playback rate
+- **Orbit** — click and drag to rotate camera freely at any time
+- **Zoom** — scroll to zoom in/out
+
+### Camera script
+
+The curator produces `camera.json` alongside the frame data. This is a list of keyframes:
+
+```json
+{
+  "keyframes": [
+    {
+      "frame": 0,
+      "camera": [100, 80, 100],
+      "target": [40, 0, 20],
+      "note": "opening — full terrain overview"
+    },
+    {
+      "frame": 100,
+      "camera": [60, 30, 50],
+      "target": [67, 0, 2],
+      "note": "zoom to first bond site"
+    },
+    {
+      "frame": 500,
+      "camera": [100, 80, 100],
+      "target": [40, 0, 20],
+      "note": "pull back to show spread"
+    }
+  ]
+}
+```
+
+Three.js interpolates smoothly between keyframes. The viewer follows the camera script by default (a guided tour of the interesting moments), but the human can grab the camera and orbit freely at any point, overriding the script.
+
+### Frame data format
+
+Each frame file (`frames/frame-NNNN.json`) contains the full grid state at that tick:
+
+```json
+{
+  "tick": 100,
+  "grid": {
+    "width": 80,
+    "height": 40,
+    "cells": [
+      {
+        "x": 0, "y": 0,
+        "elevation": -200.0,
+        "temperature": 280.0,
+        "pressure": 10.0,
+        "energy": 0.5,
+        "agent_count": 3,
+        "bonded_count": 1,
+        "max_complexity": 2,
+        "dominant_element": "alpha",
+        "activity": 0.1
+      }
+    ]
+  },
+  "stats": {
+    "total_agents": 4500,
+    "free": 3200,
+    "bonded": 1300,
+    "bonds_formed_this_tick": 12,
+    "bonds_broken_this_tick": 0
+  }
+}
+```
+
+Frame files should be compact. The grid data is the bulk — for an 80x40 grid, that's 3,200 cells per frame. At one frame per 100 ticks over a 5,000-tick run, that's 50 frames. Manageable.
+
+### No rendering in Rust
+
+The engine does not produce SVGs, HTML, or any visual output. It writes JSON frame data and event logs. The `serialize/` module in the engine is a data serializer, not a renderer. All visual rendering happens in the viewer at browse-time.
+
+This means: PRs contain data, not images. Diffs are small. The viewer improves independently of the simulation. The same data can power multiple visualization approaches without re-running the simulation.
 
 ---
 
@@ -326,15 +422,15 @@ The curator selects which region to render in detail. The dashboard always inclu
 
 The simulation does not switch modes. There are no coded eras. But the *character* of the simulation changes as complexity increases:
 
-**Early** — lots of free elements, bonding events are the main activity. Visualizations show fizzy chemical activity. Hot spots near energy sources.
+**Early** — lots of free elements, bonding events are the main activity. The viewer shows fizzy chemical activity. Hot spots near energy sources.
 
-**Middle** — stable composites persist. Some catalyze reactions. Autocatalytic networks may appear. Visualizations show pulsing rhythmic patterns where chemical loops sustain themselves.
+**Middle** — stable composites persist. Some catalyze reactions. Autocatalytic networks may appear. The viewer shows pulsing rhythmic patterns where chemical loops sustain themselves.
 
-**Late** — self-replicating agents spread exponentially, consume free elements, compete. Variation and selection begin. Visualizations show spreading waves, territorial boundaries, population dynamics.
+**Late** — self-replicating agents spread exponentially, consume free elements, compete. Variation and selection begin. The viewer shows spreading waves, territorial boundaries, population dynamics.
 
-**Mature** — complex agents with membranes, internal structure, metabolism, motility. Visualizations show distinct creatures moving across terrain. Ecosystem dynamics emerge.
+**Mature** — complex agents with membranes, internal structure, metabolism, motility. The viewer shows distinct creatures moving across terrain. Ecosystem dynamics emerge.
 
-The renderer, curator, and narrator all adapt to what's actually happening — they don't check an era flag. The curator looks for transitions (first stable bond, first autocatalyst, first replicator, first motile agent) and highlights them.
+The curator and narrator adapt to what's actually happening — they don't check an era flag. The curator looks for transitions (first stable bond, first autocatalyst, first replicator, first motile agent) and encodes them as camera keyframes. The viewer's visual character changes naturally because the underlying data changes — not because anyone switches a rendering mode.
 
 ---
 
@@ -353,7 +449,8 @@ These are the mental models the codebase should embody:
 9. **The diff.** Every run's value is what changed. The curator compares against prior runs.
 10. **Symmetry breaking.** The most important moments are when uniformity becomes non-uniform. Watch for and flag these.
 11. **Assembly not construction.** Nothing is built top-down. Everything forms bottom-up from collision and bonding.
-12. **The debugger is the visualizer.** If you can't tell what's happening from the rendered output, fix the rendering.
+12. **The debugger is the visualizer.** If you can't tell what's happening from the viewer, fix the frame data or the viewer — not the simulation.
+13. **Data, not pixels.** The engine produces JSON frames. The viewer produces visuals. These never mix. No SVGs, no HTML, no rendering code in Rust.
 
 ---
 
@@ -383,13 +480,14 @@ Each addition follows the same pattern: real equation, parameterized, fed by ele
    - Agent ticks (inner loop, ~1000 per cycle)
    - World ticks (middle loop, ~10 per cycle)
    - Stellar ticks (outer loop, 1 per cycle)
-   - Snapshot on transitions
+   - Snapshot frames at regular intervals
+   - Log transition events (firsts, milestones)
 5. After N cycles or time budget exhausted:
-   - Curator selects highlights
-   - Renderer produces dashboard + highlight views
+   - Curator analyzes events and produces camera script
    - Narrator writes the run story
-   - Everything written to `archive/runs/run-NNNN/`
+   - Frame data, events, camera script, and narrative written to `archive/runs/run-NNNN/`
    - Index regenerated
+6. On GitHub Pages, the viewer loads the run data and plays it back as an animated 3D scene
 
 ---
 
@@ -406,9 +504,10 @@ For the first working version, implement:
 - [ ] Diffusion: free agents drift to neighboring cells (biased by concentration gradient)
 - [ ] Conservation check after each world tick
 - [ ] Hot spot tagging (skip cold cells)
-- [ ] Basic isometric renderer: terrain + activity heat map
-- [ ] Snapshot on: first bond, first 3+ composite, first catalytic event
-- [ ] Dashboard: global overview + one detail view
+- [ ] Frame serializer: dump grid state as JSON at regular tick intervals
+- [ ] Event logger: firsts, milestones, transitions to events.json
+- [ ] Curator: analyze events, produce camera.json with keyframes for interesting moments
+- [ ] Three.js viewer: load frames, animate, orbit controls, play/pause/scrub, follow camera script
 - [ ] Event log as JSON
 
 Do NOT implement in v1: metabolism, replication, membranes, motility, narrator, curator intelligence beyond simple thresholds. These come later as the system grows.
