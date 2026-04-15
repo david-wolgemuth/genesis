@@ -1,0 +1,324 @@
+[
+  {
+    "type": "first_bond",
+    "tick": 100,
+    "x": 51,
+    "y": 0,
+    "elements": [
+      "gamma",
+      "alpha"
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 100,
+    "count": 10
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 106,
+    "count": 50
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 124,
+    "count": 100
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 500,
+    "free_agents": 3155,
+    "bonded_agents": 345,
+    "total_bonds": 173,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1000,
+    "free_agents": 3113,
+    "bonded_agents": 387,
+    "total_bonds": 194,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1500,
+    "free_agents": 3073,
+    "bonded_agents": 427,
+    "total_bonds": 214,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2000,
+    "free_agents": 3035,
+    "bonded_agents": 465,
+    "total_bonds": 233,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2500,
+    "free_agents": 3007,
+    "bonded_agents": 493,
+    "total_bonds": 247,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3000,
+    "free_agents": 2979,
+    "bonded_agents": 521,
+    "total_bonds": 261,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3500,
+    "free_agents": 2961,
+    "bonded_agents": 539,
+    "total_bonds": 270,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4000,
+    "free_agents": 2933,
+    "bonded_agents": 567,
+    "total_bonds": 284,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4500,
+    "free_agents": 2901,
+    "bonded_agents": 599,
+    "total_bonds": 300,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 5000,
+    "free_agents": 2877,
+    "bonded_agents": 623,
+    "total_bonds": 312,
+    "element_counts": [
+      [
+        "alpha",
+        1500
+      ],
+      [
+        "beta",
+        1000
+      ],
+      [
+        "delta",
+        500
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        200
+      ]
+    ]
+  },
+  {
+    "type": "simulation_end",
+    "tick": 5000,
+    "total_bonds_formed": 312,
+    "total_bonds_broken": 0,
+    "conservation_ok": true
+  }
+]

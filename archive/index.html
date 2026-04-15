@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Genesis Archive</title>
 <style>
-body { background: #0a0a1a; color: #c0c0c0; font-family: 'Courier New', monospace; margin: 2em; max-width: 800px; }
+body { background: #0a0a1a; color: #c0c0c0; font-family: 'Courier New', monospace; margin: 2em; max-width: 860px; }
 h1 { color: #4a90d9; }
 h2 { color: #888; border-bottom: 1px solid #333; padding-bottom: 0.3em; }
 a { color: #4a90d9; text-decoration: none; }
@@ -14,25 +14,88 @@ a:hover { text-decoration: underline; }
 .run .meta { color: #666; font-size: 0.85em; }
 .run .links { margin-top: 0.5em; }
 .run .links a { margin-right: 1em; }
+.run .stat { display: inline-block; margin-right: 1.5em; }
+.run .stat .n { color: #e0e0e0; font-weight: bold; }
 p { line-height: 1.6; }
+.note { color: #668; font-size: 0.9em; border-left: 2px solid #334; padding-left: 0.8em; margin: 0.5em 0; }
 </style>
 </head>
 <body>
 <h1>Genesis Archive</h1>
-<p>A growing archive of simulation runs. Each run adds one mechanism, one layer of complexity, one step up the emergence ladder.</p>
+<p>A growing archive of simulation runs. Each run adds one mechanism, one layer of complexity, one step up the emergence ladder. The engine produces JSON frame data; the <a href="../viewer/viewer.html">viewer</a> renders it.</p>
 
-<h2>Runs</h2>
+<h2>Cycle 2 — Spec Alignment &amp; Multi-Seed Survey (2026-04-15)</h2>
+
+<div class="run">
+<h3>Run 0002 — Tidal Pool (seed 42)</h3>
+<div class="meta">2026-04-15 &middot; Seed: Tidal Pool &middot; 4,500 agents &middot; 5,000 ticks</div>
+<div style="margin: 0.5em 0">
+  <span class="stat"><span class="n">1,213</span> bonds</span>
+  <span class="stat"><span class="n">53.7%</span> bonded</span>
+  <span class="stat"><span class="n">0</span> broken</span>
+  <span class="stat">Conservation <span class="n">OK</span></span>
+</div>
+<p class="note">First bond tick 100. Catalysis tick 103. Hit 1,000-bond milestone at tick 1,806. Gradient terrain from −200m coast to +50m land. Highest bond density of the three seeds.</p>
+<div class="links">
+  <a href="../viewer/viewer.html?run=run-0002">&#127909; Watch</a>
+  <a href="runs/run-0002/narrator.md">Narrative</a>
+  <a href="runs/run-0002/research.md">Research</a>
+  <a href="runs/run-0002/camera.json">Camera Script</a>
+  <a href="runs/run-0002/events.json">Events</a>
+  <a href="runs/run-0002/manifest.json">Manifest</a>
+</div>
+</div>
+
+<div class="run">
+<h3>Run 0003 — Deep Ocean (seed 99)</h3>
+<div class="meta">2026-04-15 &middot; Seed: Deep Ocean &middot; 3,500 agents &middot; 5,000 ticks</div>
+<div style="margin: 0.5em 0">
+  <span class="stat"><span class="n">307</span> bonds</span>
+  <span class="stat"><span class="n">17.5%</span> bonded</span>
+  <span class="stat"><span class="n">0</span> broken</span>
+  <span class="stat">Conservation <span class="n">OK</span></span>
+</div>
+<p class="note">Uniform deep trench (−300 to −400m). UV attenuated to near-zero at depth; only geothermal vents drive chemistry. 4× fewer bonds than Tidal Pool despite similar agent count. First bond and first catalysis both at tick 100 (same world tick).</p>
+<div class="links">
+  <a href="../viewer/viewer.html?run=run-0003">&#127909; Watch</a>
+  <a href="runs/run-0003/narrator.md">Narrative</a>
+  <a href="runs/run-0003/research.md">Research</a>
+  <a href="runs/run-0003/camera.json">Camera Script</a>
+  <a href="runs/run-0003/events.json">Events</a>
+  <a href="runs/run-0003/manifest.json">Manifest</a>
+</div>
+</div>
+
+<div class="run">
+<h3>Run 0004 — Volcanic Ridge (seed 7)</h3>
+<div class="meta">2026-04-15 &middot; Seed: Volcanic Ridge &middot; 6,000 agents &middot; 5,000 ticks</div>
+<div style="margin: 0.5em 0">
+  <span class="stat"><span class="n">1,088</span> bonds</span>
+  <span class="stat"><span class="n">36.1%</span> bonded</span>
+  <span class="stat"><span class="n">0</span> broken</span>
+  <span class="stat">Conservation <span class="n">OK</span></span>
+</div>
+<p class="note">High roughness (0.8) creates varied elevation — pockets of shallow cells flanked by deep trenches. Hit 50 bonds in the first world tick. Despite most agents, bond rate per agent (18%) was lower than Tidal Pool (27%), suggesting the uniform placement strategy spreads agents too thin.</p>
+<div class="links">
+  <a href="../viewer/viewer.html?run=run-0004">&#127909; Watch</a>
+  <a href="runs/run-0004/narrator.md">Narrative</a>
+  <a href="runs/run-0004/research.md">Research</a>
+  <a href="runs/run-0004/camera.json">Camera Script</a>
+  <a href="runs/run-0004/events.json">Events</a>
+  <a href="runs/run-0004/manifest.json">Manifest</a>
+</div>
+</div>
+
+<h2>Cycle 1 — Initial Engine (2026-04-14)</h2>
 
 <div class="run">
 <h3>Run 0001 — The Birth of Chemistry</h3>
 <div class="meta">2026-04-14 &middot; Seed: Tidal Pool &middot; 4,500 agents &middot; 5,000 ticks</div>
-<p>First run. Five alien elements, eight bond rules, geothermal vents, day/night cycle. 1,255 bonds formed. Conservation held. Chemistry ignited at the coast.</p>
+<p class="note">First run. Five alien elements, eight bond rules, geothermal vents, day/night cycle. 1,255 bonds formed. Conservation held. Chemistry ignited at the coast. (Pre-viewer run — no frame data, only legacy dashboard.)</p>
 <div class="links">
-<a href="runs/run-0001/dashboard.html">Dashboard</a>
-<a href="runs/run-0001/highlights/first-bonds.html">First Bonds</a>
-<a href="runs/run-0001/narrator.md">Narrative</a>
-<a href="runs/run-0001/research.md">Research</a>
-<a href="runs/run-0001/events.json">Events</a>
+  <a href="runs/run-0001/narrator.md">Narrative</a>
+  <a href="runs/run-0001/research.md">Research</a>
+  <a href="runs/run-0001/events.json">Events</a>
 </div>
 </div>
 

@@ -3,13 +3,15 @@ mod conservation;
 mod world;
 mod agents;
 mod render;
+mod serialize;
 
 use crate::agents::entity::Agent;
 use crate::agents::tick::{agent_tick, TickStats};
 use crate::config::*;
 use crate::conservation::{element_census, verify_conservation};
-use crate::render::renderer::{render_dashboard, render_highlight};
-use crate::render::snapshot::{Event, EventLog};
+use crate::serialize::curator::{curate, RunManifest};
+use crate::serialize::narrator::narrate;
+use crate::serialize::snapshot::{Event, EventLog, FrameData};
 use crate::world::clocks::ClockSystem;
 use crate::world::diffusion::diffuse_agents;
 use crate::world::energy::{apply_geothermal, reset_energy, update_star_energy};
@@ -79,7 +81,6 @@ fn main() {
     // Place geothermal vents
     let vent_positions: Vec<(usize, usize)> = (0..env_config.geothermal.vent_count)
         .map(|_| {
-            // Place vents in the deeper (left) side of the grid, underwater
             let x = rng.gen_range(0..grid.width / 3);
             let y = rng.gen_range(0..grid.height);
             (x, y)
@@ -92,7 +93,6 @@ fn main() {
 
     let agent_counts = seed_config.initial_agents.as_map();
     for (elem_name, &count) in &agent_counts {
-        // Look up element mass from config
         let mass = elements_config
             .elements
             .iter()
@@ -130,9 +130,21 @@ fn main() {
     let mut stats = TickStats::new();
 
     let total_ticks = cli.cycles * 100; // 100 agent ticks per cycle
-    let snapshot_interval = (total_ticks / 5).max(1); // ~5 snapshots per run, min 1
+    let snapshot_interval = (total_ticks / 10).max(1); // up to 10 frames per run
 
     println!("Running {} cycles ({} ticks)...", cli.cycles, total_ticks);
+
+    // Collected frames for writing at the end
+    let mut frames: Vec<FrameData> = Vec::new();
+
+    // Track bonds formed/broken per snapshot interval for frame stats.
+    // stats.bonds_formed is cumulative; we track the previous value and diff.
+    let mut bonds_formed_at_last_snapshot: u64 = 0;
+    let mut bonds_broken_at_last_snapshot: u64 = 0;
+
+    // Capture frame 0 (initial state)
+    let initial_frame = FrameData::capture(0, &grid, &agents, 0, 0);
+    frames.push(initial_frame);
 
     // Main simulation loop
     for _ in 0..total_ticks {
@@ -140,7 +152,6 @@ fn main() {
 
         // World tick: recompute energy, diffusion, temperature, pressure
         if clocks.is_world_tick() {
-            // Reset temperatures and energy to baseline
             for cell in &mut grid.cells {
                 let depth = cell.depth();
                 cell.temperature = temperature_from_depth(
@@ -151,19 +162,13 @@ fn main() {
                 cell.pressure = pressure_from_depth(depth);
             }
             reset_energy(&mut grid);
-
-            // Recompute energy: star first, then geothermal adds on top
             update_star_energy(&mut grid, &star_config, clocks.current_tick);
             apply_geothermal(
                 &mut grid,
                 &vent_positions,
                 env_config.geothermal.vent_energy_output,
             );
-
-            // Diffuse free agents
             diffuse_agents(&mut grid, &mut agents, &mut rng);
-
-            // Update activity tagging
             grid.update_activity();
 
             // Conservation check — the sacred invariant
@@ -194,6 +199,20 @@ fn main() {
                     total_bonds,
                     element_counts: elem_counts,
                 });
+
+                // Capture a full frame
+                let formed_delta = stats.bonds_formed - bonds_formed_at_last_snapshot;
+                let broken_delta = stats.bonds_broken - bonds_broken_at_last_snapshot;
+                let frame = FrameData::capture(
+                    clocks.current_tick,
+                    &grid,
+                    &agents,
+                    formed_delta,
+                    broken_delta,
+                );
+                frames.push(frame);
+                bonds_formed_at_last_snapshot = stats.bonds_formed;
+                bonds_broken_at_last_snapshot = stats.bonds_broken;
             }
         }
 
@@ -211,7 +230,9 @@ fn main() {
             event_log.record(event);
         }
 
-        // Check for bond milestones (handles jumps past threshold)
+        // (delta tracking is done at snapshot time from cumulative stats)
+
+        // Check for bond milestones
         let milestone_thresholds = [10, 50, 100, 500, 1000];
         for &threshold in &milestone_thresholds {
             if stats.check_milestone(threshold) {
@@ -233,73 +254,97 @@ fn main() {
         conservation_ok,
     });
 
+    // Capture final frame (only if it wasn't already captured by periodic snapshot)
+    let already_captured = frames.last().map(|f| f.tick == clocks.current_tick).unwrap_or(false);
+    if !already_captured {
+        let final_frame = FrameData::capture(
+            clocks.current_tick,
+            &grid,
+            &agents,
+            stats.bonds_formed - bonds_formed_at_last_snapshot,
+            stats.bonds_broken - bonds_broken_at_last_snapshot,
+        );
+        frames.push(final_frame);
+    }
+
     println!("\nSimulation complete.");
     println!("  Bonds formed:  {}", stats.bonds_formed);
     println!("  Bonds broken:  {}", stats.bonds_broken);
     println!("  Conservation:  {}", if conservation_ok { "OK" } else { "FAILED" });
+    println!("  Frames:        {}", frames.len());
 
-    // Write output artifacts
+    // -----------------------------------------------------------------------
+    // Write output artifacts — data only, no HTML, no SVGs
+    // -----------------------------------------------------------------------
     let output_dir = &cli.output;
-    std::fs::create_dir_all(output_dir).expect("Failed to create output directory");
-    std::fs::create_dir_all(output_dir.join("highlights")).expect("Failed to create highlights directory");
+    let frames_dir = output_dir.join("frames");
+    std::fs::create_dir_all(&frames_dir).expect("Failed to create frames directory");
 
-    // Event log
+    // events.json
     let events_json = event_log.to_json();
     std::fs::write(output_dir.join("events.json"), &events_json)
         .expect("Failed to write events.json");
     println!("  Wrote events.json ({} events)", event_log.events.len());
 
-    // Dashboard
-    let dashboard = render_dashboard(&grid, &agents, &stats, &event_log, &seed_config.name);
-    std::fs::write(output_dir.join("dashboard.html"), &dashboard)
-        .expect("Failed to write dashboard.html");
-    println!("  Wrote dashboard.html");
-
-    // Highlights — generate for notable events
-    let mut highlight_count = 0;
-    for event in &event_log.events {
-        match event {
-            Event::FirstBond { tick, x, y, elements } => {
-                let html = render_highlight(
-                    &grid,
-                    "First Bond",
-                    &format!(
-                        "The first chemical bond in this universe: {} and {} joined at ({}, {}). \
-                         A new composite emerged from the primordial mix.",
-                        elements[0], elements[1], x, y
-                    ),
-                    *tick,
-                );
-                std::fs::write(
-                    output_dir.join("highlights/first-bonds.html"),
-                    &html,
-                ).expect("Failed to write highlight");
-                highlight_count += 1;
-            }
-            Event::FirstCatalysis { tick, catalyst, reaction, .. } => {
-                let html = render_highlight(
-                    &grid,
-                    "First Catalysis",
-                    &format!(
-                        "The first catalytic event: {} accelerated the bonding of {} and {}. \
-                         Chemistry begins to bootstrap itself.",
-                        catalyst, reaction[0], reaction[1]
-                    ),
-                    *tick,
-                );
-                std::fs::write(
-                    output_dir.join("highlights/first-catalysis.html"),
-                    &html,
-                ).expect("Failed to write highlight");
-                highlight_count += 1;
-            }
-            _ => {}
-        }
-        if highlight_count >= 3 {
-            break;
-        }
+    // frames/frame-NNNN.json — one per snapshot
+    let mut frame_paths: Vec<String> = Vec::new();
+    for frame in &frames {
+        let filename = format!("frame-{:04}.json", frame.tick);
+        let path = frames_dir.join(&filename);
+        std::fs::write(&path, frame.to_json()).expect("Failed to write frame");
+        frame_paths.push(format!("frames/{}", filename));
     }
-    println!("  Wrote {} highlights", highlight_count);
+    println!("  Wrote {} frame files to frames/", frames.len());
+
+    // camera.json — curator's camera script
+    let camera_script = curate(
+        &event_log.events,
+        frames.len(),
+        grid.width,
+        grid.height,
+    );
+    let camera_json = camera_script.to_json();
+    std::fs::write(output_dir.join("camera.json"), &camera_json)
+        .expect("Failed to write camera.json");
+    println!(
+        "  Wrote camera.json ({} keyframes)",
+        camera_script.keyframes.len()
+    );
+
+    // narrator.md
+    let narrative = narrate(
+        &event_log.events,
+        &seed_config.name,
+        &seed_config.description,
+        grid.width,
+        grid.height,
+        frames.len(),
+    );
+    std::fs::write(output_dir.join("narrator.md"), &narrative)
+        .expect("Failed to write narrator.md");
+    println!("  Wrote narrator.md");
+
+    // manifest.json — viewer entry point
+    let mut element_colors: HashMap<String, String> = HashMap::new();
+    for elem in &elements_config.elements {
+        element_colors.insert(elem.name.clone(), elem.color.clone());
+    }
+    let run_name = output_dir
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("run-unknown")
+        .to_string();
+    let manifest = RunManifest {
+        run: run_name,
+        seed: seed_config.name.clone(),
+        total_ticks: clocks.current_tick,
+        total_agents: agents.len(),
+        element_colors,
+        frames: frame_paths,
+    };
+    std::fs::write(output_dir.join("manifest.json"), manifest.to_json())
+        .expect("Failed to write manifest.json");
+    println!("  Wrote manifest.json");
 
     println!("\nAll artifacts written to {}", output_dir.display());
 }
@@ -308,10 +353,8 @@ fn main() {
 fn place_agent(grid: &Grid, seed: &SeedConfig, rng: &mut impl Rng) -> (usize, usize) {
     match seed.placement.strategy.as_str() {
         "density_by_depth" => {
-            // More agents in shallows (right side where elevation is higher but still underwater)
-            // Use a bias toward the middle-right where the tidal zone is
             let x = {
-                let biased = rng.gen::<f64>().powf(0.7); // bias toward higher values
+                let biased = rng.gen::<f64>().powf(0.7);
                 (biased * grid.width as f64) as usize
             }
             .min(grid.width - 1);
@@ -319,7 +362,6 @@ fn place_agent(grid: &Grid, seed: &SeedConfig, rng: &mut impl Rng) -> (usize, us
             (x, y)
         }
         _ => {
-            // Uniform random
             let x = rng.gen_range(0..grid.width);
             let y = rng.gen_range(0..grid.height);
             (x, y)

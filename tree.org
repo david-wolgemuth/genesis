@@ -2,9 +2,12 @@
 #+STARTUP: overview
 
 * Prime
-Cycle 1: Scaffolding the engine. Grid, elements, bonding, diffusion,
-conservation, and a minimal renderer. First run on the tidal-pool seed.
-Research topic: chemical bonding thermodynamics and emergent complexity.
+Cycle 2: Completed the spec alignment. Replaced render/ (SVG/HTML from Rust) with
+serialize/ (JSON frame data). Added Three.js viewer. Ran 3 seeds: Tidal Pool (1213
+bonds, 53.7% bonded), Deep Ocean (307 bonds, 17.5% bonded), Volcanic Ridge (1088
+bonds, 36.1% bonded). Conservation held on all runs. Zero bonds ever broke — stable
+chemistry regime. Priority next: Arrhenius kinetics to create temperature-dependent
+bond rates and enable actual bond breaking in hot zones.
 
 * World                                                        :branch:
 ** Grid and Terrain                                            :implemented:
@@ -34,6 +37,11 @@ Research topic: chemical bonding thermodynamics and emergent complexity.
 ** Atmospheric Chemistry                                       :discovered:
    Free elements in the atmosphere reacting. Greenhouse effects,
    UV shielding. Requires gas-phase reaction model.
+** Temperature Dynamics                                        :discovered:
+   Currently temperature resets to depth-derived baseline every world
+   tick. Exothermic bonds should locally heat cells. Endothermic bonds
+   should locally cool them. This feedback would enable bond-breaking
+   in hot zones (geothermal runaway).
 
 * Agents                                                       :branch:
 ** Entity-Component Model                                      :implemented:
@@ -46,15 +54,18 @@ Research topic: chemical bonding thermodynamics and emergent complexity.
    Bond stability depends on temperature and pressure.
 ** Bond Breaking                                               :implemented:
    Bonds break when local conditions exceed stability limits.
-   Components return to the cell as free agents.
+   In practice no bonds broke in runs 0002-0004 — temperatures
+   stay below stability thresholds. See Temperature Dynamics.
 ** Neighborhood Interaction                                    :implemented:
    Agents interact only with adjacent cells. No action at distance.
 ** Catalysis                                                   :shallow:
    Catalyst presence multiplies bond formation rate. Currently
    simple multiplier. Could model enzyme kinetics (Michaelis-Menten).
 ** Reaction Kinetics (Arrhenius)                               :discovered:
-   Temperature-dependent reaction rates. The Arrhenius equation
-   governs how fast bonds form as a function of temperature.
+   k = A * exp(-Ea / (R * T)). Rate constant as function of
+   temperature. Would make bonding temperature-sensitive. HIGH PRIORITY
+   next cycle — would create real spatial differentiation and enable
+   bond-breaking in geothermal zones.
 ** Metabolism                                                   :discovered:
    Agents that consume elements/energy and produce others.
    Requires internal state and energy accounting.
@@ -68,28 +79,38 @@ Research topic: chemical bonding thermodynamics and emergent complexity.
    Self-directed movement consuming energy. Requires
    energy budget and directional decision-making.
 
-* Render                                                       :branch:
+* Serialize                                                    :branch:
 ** Snapshot System                                             :implemented:
-   Captures state at transitions: first bond, first composite,
-   first catalytic event. Fossil record model.
+   Captures full grid state as JSON frames at configurable intervals.
+   Per-cell: elevation, temperature, pressure, energy, agent_count,
+   bonded_count, max_complexity, dominant_element, activity.
 ** Event Log                                                   :implemented:
    JSON log of simulation events. Timestamped, typed.
-** Basic Renderer                                              :implemented:
-   Isometric terrain view with activity heat map overlay.
-   HTML output with inline SVG.
-** Dashboard                                                   :implemented:
-   Global overview: population chart, element distribution,
-   bonding activity over time. Fixed views every run.
-** Curator                                                     :shallow:
-   Currently uses simple thresholds (first bond, first composite).
-   Could develop more sophisticated interest metrics.
-** Narrator                                                    :discovered:
-   Reads event log, writes prose narrative of the run.
-   Not implemented in v1.
+** Curator                                                     :implemented:
+   Analyzes event log and produces camera.json with keyframes for
+   first bond, first catalysis, bond milestones, and overview shots.
+** Narrator                                                    :implemented:
+   Reads event log and writes narrator.md. Plain English field-
+   researcher log: births, trajectories, final state, recommendations.
+** Frame Manifest                                              :implemented:
+   manifest.json per run: run name, seed, element colors, frame
+   file list. Entry point for the viewer.
+** Run Comparison                                              :shallow:
+   The curator currently does not compare against prior runs.
+   Adding cross-run diffing would let the curator flag regressions
+   and unexpected changes.
+
+* Viewer                                                       :implemented:
+   Three.js viewer (viewer/viewer.html). Loads manifest.json and
+   frame data. Renders terrain as 3D heightmap with vertex colors
+   blended from element type and activity intensity. Orbit controls,
+   play/pause/scrub, speed control, guided camera (follows camera.json
+   keyframes with annotation overlays), G key to toggle free orbit.
+   Written once, works for all runs via ?run=run-NNNN query param.
 
 * Conservation                                                 :implemented:
   Element counts verified after every world tick. Panic on violation.
-  The single most important invariant.
+  The single most important invariant. Held on all runs 0001-0004.
 
 * Science                                                      :branch:
 ** Thermodynamics                                              :shallow:
@@ -99,8 +120,8 @@ Research topic: chemical bonding thermodynamics and emergent complexity.
    First law discretized on grid. Flux proportional to
    concentration gradient. Diffusion coefficient from element mass.
 ** Arrhenius Equation                                          :discovered:
-   k = A * exp(-Ea / (R * T)). Rate constant as function of
-   temperature. Would make bonding temperature-sensitive.
+   k = A * exp(-Ea / RT). Rate constant as function of
+   temperature. Would make bonding temperature-sensitive. PRIORITY.
 ** Van't Hoff Equation                                         :discovered:
    Osmotic pressure. Relevant when membranes are implemented.
 ** Wright-Fisher Model                                         :discovered:
@@ -108,3 +129,7 @@ Research topic: chemical bonding thermodynamics and emergent complexity.
    replication with variation is implemented.
 ** Michaelis-Menten Kinetics                                   :discovered:
    Enzyme catalysis saturation. Would deepen the catalysis model.
+** Bond Equilibrium                                            :discovered:
+   The current system has no bond-breaking in practice. Real chemistry
+   reaches equilibrium where formation rate = breaking rate. This
+   requires temperature feedback from exothermic bond heat release.
