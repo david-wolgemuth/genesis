@@ -107,15 +107,11 @@ Load the previous run's output from `archive/runs/run-NNNN-1/`. Diff against the
 
 ### 7. Curate
 
-Select the 2-3 most interesting moments or observations from this run. For each one, produce a standalone HTML page in `archive/runs/run-NNNN/highlights/`:
+Produce a **camera script** (`archive/runs/run-NNNN/camera.json`). This is a list of keyframes that tell the Three.js viewer where to point the camera and when. Each keyframe targets an interesting moment in the run.
 
-- A rendered visual (isometric detail view, heat map, chart, or comparison image)
-- A title that says what you're looking at
-- 2-3 sentences of context: what happened, why it matters
+For each notable moment, create a keyframe with: the frame number, the camera position, the look-at target, and a short note explaining what's happening. The viewer will interpolate smoothly between keyframes and display the notes as annotations.
 
-Also produce the fixed dashboard view: `archive/runs/run-NNNN/dashboard.html` — the global overview that every run gets regardless of how interesting it was.
-
-Select criteria for highlights — look for:
+Select criteria for keyframes — look for:
 
 - **Firsts** — first stable bond, first composite of N+ elements, first autocatalytic loop, first replicator, first motile agent
 - **Spatial patterns** — clustering, boundary formation, migration, territory
@@ -123,7 +119,7 @@ Select criteria for highlights — look for:
 - **Symmetry breaking** — something that was uniform becoming non-uniform
 - **The unexpected** — anything you didn't predict in your research step
 
-If nothing interesting happened, that's fine. The dashboard is enough. Not every run produces highlights. But note in the narrative *why* nothing interesting happened — that's useful data for the next cycle.
+If nothing interesting happened, produce a minimal camera script (just an overview). Not every run has dramatic moments. But note in the narrative *why* nothing interesting happened — that's useful data for the next cycle.
 
 ### 8. Narrate
 
@@ -136,7 +132,7 @@ Write `archive/runs/run-NNNN/narrator.md`. This is not a code changelog. It's th
 - What the agent recommends exploring next and why
 - Any connections noticed — "this mechanism might interact with X which isn't implemented yet"
 
-This document should be readable by someone who has never seen the codebase. It references the highlights by relative link.
+This document should be readable by someone who has never seen the codebase. It references the camera script keyframes by frame number so the reader can scrub the viewer to the relevant moments.
 
 ### 9. Record
 
@@ -159,8 +155,8 @@ The pull request should contain:
 
 **New files:**
 - `archive/runs/run-NNNN/research.md`
-- `archive/runs/run-NNNN/dashboard.html`
-- `archive/runs/run-NNNN/highlights/*.html` (if any)
+- `archive/runs/run-NNNN/frames/*.json` (frame snapshots)
+- `archive/runs/run-NNNN/camera.json` (curator's camera script)
 - `archive/runs/run-NNNN/narrator.md`
 - `archive/runs/run-NNNN/events.json`
 - `notebook/YYYY-MM-DD.md`
@@ -172,14 +168,14 @@ Short. A few sentences with relative links. The human reads this on their phone 
 
 1. What you worked on (one sentence)
 2. What happened (one sentence)
-3. The most interesting thing (one sentence with a link to the highlight)
+3. The most interesting thing (one sentence with a link to the viewer for this run)
 4. What you'd explore next (one sentence)
 
 Example:
 
 > **Added temperature-dependent reaction rates (Arrhenius equation)**
 >
-> Bonding rates now scale with temperature. The volcanic ridge became the most active region in the simulation — [see the ridge activation highlight](./archive/runs/run-0012/highlights/ridge-activation.html). The deep trench went nearly inert, consistent with low thermal energy. [Full narrative](./archive/runs/run-0012/narrator.md) · [Research notes](./archive/runs/run-0012/research.md)
+> Bonding rates now scale with temperature. The volcanic ridge became the most active region — the camera script zooms in at frame 340. The deep trench went nearly inert, consistent with low thermal energy. [Watch the run](../../viewer/viewer.html?run=run-0012) · [Full narrative](./archive/runs/run-0012/narrator.md) · [Research notes](./archive/runs/run-0012/research.md)
 >
 > Recommends exploring diffusion (Fick's laws) next — currently elements don't spread between cells, so the ridge activity is isolated.
 
@@ -194,7 +190,7 @@ Revert all code changes. PR contains: research, tree update with `:blocked:` tag
 Go back to Implement. If it still fails after 3 full Build→Run cycles, treat as compilation failure above. Revert and document.
 
 ### Nothing interesting happened
-Ship it anyway. Dashboard, narrator explaining why nothing changed, notebook entry. Sometimes the mechanism needs a different environment to activate. Note that in the narrative: "Diffusion was implemented but with current element density, concentration gradients are too shallow to produce visible effects. A denser seed or smaller grid might show more activity."
+Ship it anyway. Frame data, narrator explaining why nothing changed, notebook entry. Sometimes the mechanism needs a different environment to activate. Note that in the narrative: "Diffusion was implemented but with current element density, concentration gradients are too shallow to produce visible effects. A denser seed or smaller grid might show more activity."
 
 ### Conservation check fails
 This is a bug. Do not proceed. Go back to Implement and fix it. Conservation is the one invariant that can never be broken. If you can't fix it, revert.
@@ -208,7 +204,7 @@ This is fine. The simulation runs alien chemistry — real equations with alien 
 
 - **You are not writing all the code from scratch each cycle.** You are incrementally adding to an existing, growing codebase.
 - **You are not deciding what the simulation produces.** You implement mechanisms. The simulation produces whatever emerges.
-- **You are not making the output pretty.** The isometric renderer and dashboard are functional, not polished. A researcher's notebook, not a product demo.
+- **You are not rendering visuals.** The engine produces JSON frame data. The Three.js viewer handles all rendering. Do not generate SVGs, HTML dashboards, or images in Rust.
 - **You are not hardcoding numbers.** Every mechanism is an equation with parameters from config. The only hardcoded numbers are universal physical constants.
 - **You are not optimizing for speed.** The simulation should be compute-rich, not artificially fast. If a run takes 10 minutes of genuine computation, that's good.
 - **You are not skipping the research step.** Even if you already know about genetic drift or osmotic pressure from training data, search the web, read current sources, cite them. Your training data may be wrong or outdated. The research document is an artifact with value.
@@ -243,11 +239,12 @@ These are set by the human, not the agent. Respect them:
 The very first cycle is special. There is no previous run to compare against. There is no existing codebase to orient on. The first PR should:
 
 1. **Research** the seed topic (whatever the initial concept tree's top-priority node is)
-2. **Scaffold** the engine from SPEC.md — the grid, the element loader, basic bonding, the conservation check, a minimal renderer
-3. **Run** with the default seed — probably just elements bouncing around and occasionally bonding
-4. **Curate** whatever happens — even if it's just "elements formed bonds near the vent, here's what that looked like"
-5. **Narrate** the birth of the simulation
+2. **Scaffold** the engine from SPEC.md — the grid, the element loader, basic bonding, the conservation check, the frame serializer
+3. **Build the viewer** — a Three.js viewer.html that loads frame data and renders the terrain with activity overlays, with play/pause/scrub and orbit controls
+4. **Run** with the default seed — probably just elements bouncing around and occasionally bonding
+5. **Curate** whatever happens — produce a camera script that zooms to the first bond site
+6. **Narrate** the birth of the simulation
 
-The first PR's description: "Initial engine. Elements bond near energy sources. [See first bonds](./archive/runs/run-0001/highlights/first-bonds.html)."
+The first PR's description: "Initial engine and viewer. Elements bond near energy sources. [Watch the run](../../viewer/viewer.html?run=run-0001)."
 
 From there, every subsequent PR adds one mechanism, one layer of complexity, one step up the emergence ladder.
