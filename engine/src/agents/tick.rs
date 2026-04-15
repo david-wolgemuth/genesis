@@ -1,7 +1,7 @@
 use crate::agents::bonding;
 use crate::agents::entity::Agent;
 use crate::config::ElementsConfig;
-use crate::render::snapshot::Event;
+use crate::serialize::snapshot::Event;
 use crate::world::grid::{Activity, Grid};
 use rand::Rng;
 use std::collections::HashMap;

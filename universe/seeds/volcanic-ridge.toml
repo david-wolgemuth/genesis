@@ -1,0 +1,23 @@
+# Volcanic Ridge Seed
+# A mix of deep trenches flanking a central shallow ridge — like a mid-ocean ridge.
+# High temperature near geothermal vents on the ridge. Steep gradients.
+# Tests whether hot-zone chemistry differs from cold deep zones.
+
+name = "Volcanic Ridge"
+description = "Central shallow ridge flanked by deep trenches — extreme thermal gradients"
+
+[terrain]
+type = "gradient"
+left_depth = -350.0            # deep left trench
+right_depth = -350.0           # deep right trench (ridge is in the middle — handled by roughness)
+roughness = 0.8                # high roughness creates the ridge topology
+
+[initial_agents]
+alpha = 2500
+beta = 2000
+gamma = 800
+delta = 400
+epsilon = 300
+
+[placement]
+strategy = "uniform"

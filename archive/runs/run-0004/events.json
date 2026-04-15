@@ -1,0 +1,345 @@
+[
+  {
+    "type": "first_bond",
+    "tick": 100,
+    "x": 26,
+    "y": 1,
+    "elements": [
+      "gamma",
+      "delta"
+    ]
+  },
+  {
+    "type": "first_catalysis",
+    "tick": 100,
+    "x": 61,
+    "y": 3,
+    "catalyst": "epsilon",
+    "reaction": [
+      "delta",
+      "gamma"
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 100,
+    "count": 10
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 100,
+    "count": 50
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 101,
+    "count": 100
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 210,
+    "count": 500
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 500,
+    "free_agents": 4704,
+    "bonded_agents": 1296,
+    "total_bonds": 651,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1000,
+    "free_agents": 4386,
+    "bonded_agents": 1614,
+    "total_bonds": 810,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 1500,
+    "free_agents": 4222,
+    "bonded_agents": 1778,
+    "total_bonds": 892,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2000,
+    "free_agents": 4126,
+    "bonded_agents": 1874,
+    "total_bonds": 940,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 2500,
+    "free_agents": 4044,
+    "bonded_agents": 1956,
+    "total_bonds": 981,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "bond_count_milestone",
+    "tick": 2780,
+    "count": 1000
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3000,
+    "free_agents": 3984,
+    "bonded_agents": 2016,
+    "total_bonds": 1011,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 3500,
+    "free_agents": 3946,
+    "bonded_agents": 2054,
+    "total_bonds": 1030,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4000,
+    "free_agents": 3894,
+    "bonded_agents": 2106,
+    "total_bonds": 1056,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 4500,
+    "free_agents": 3862,
+    "bonded_agents": 2138,
+    "total_bonds": 1072,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "population_snapshot",
+    "tick": 5000,
+    "free_agents": 3854,
+    "bonded_agents": 2146,
+    "total_bonds": 1076,
+    "element_counts": [
+      [
+        "alpha",
+        2500
+      ],
+      [
+        "beta",
+        2000
+      ],
+      [
+        "delta",
+        400
+      ],
+      [
+        "epsilon",
+        300
+      ],
+      [
+        "gamma",
+        800
+      ]
+    ]
+  },
+  {
+    "type": "simulation_end",
+    "tick": 5000,
+    "total_bonds_formed": 1076,
+    "total_bonds_broken": 0,
+    "conservation_ok": true
+  }
+]
